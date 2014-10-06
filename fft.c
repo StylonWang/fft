@@ -1,0 +1,71 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/uio.h>
+#include <unistd.h>
+#include <string.h>
+#include <errno.h>
+#include <complex.h>
+#include <fftw3.h>
+
+int main(int argc, char **argv)
+{
+    double *in;
+    fftw_complex *out;
+    fftw_plan p;
+    const int N=128;
+    int i;
+
+    int fd;
+    short buf[N*2];
+
+    if(argc<2) {
+        printf("usage: %s raw-audio-file\n\n", argv[0]);
+        printf("audio format in file must be 16-bit signed little endian, 2 channel PCM audio\n");
+        exit(1);
+    }
+
+    fd = open(argv[1], O_RDONLY);
+    if(fd<0) {
+        printf("open failed: %s\n", strerror(errno));
+        exit(1);
+    }  
+
+    in = (double*) fftw_malloc(sizeof(double) * N);
+    out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * N/2+1);
+    p = fftw_plan_dft_r2c_1d(N, in, out, FFTW_ESTIMATE);
+
+    while(1) {
+        ssize_t sz;
+        
+        sz = read(fd, buf, sizeof(buf));
+        if(0==sz) break;
+        else if(sz<0) {
+            printf("read failed: %s\n", strerror(errno));
+            exit(1);
+        }
+
+        // copy only 1 channel of audio into FFT in buffer
+        for(i=0 ;i<N; ++i) {
+            in[i] = buf[i*2];
+        }
+
+        fftw_execute(p);
+    }
+
+    printf("result: ");
+    for(i=0; i<N/2+1; ++i) {
+        if(i%8 == 0) { // pretty print
+            printf("\n%4d: ", i/8);
+        }
+        printf("%6.3f ", cabs(out[i]));
+    }
+    printf("\n");
+
+    fftw_destroy_plan(p);
+    fftw_free(in); fftw_free(out);
+
+    return 0;
+}
+

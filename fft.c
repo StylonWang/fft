@@ -19,6 +19,7 @@ int main(int argc, char **argv)
 
     int fd;
     short buf[N*2];
+    long processed_size=0;
 
     if(argc<2) {
         printf("usage: %s raw-audio-file\n\n", argv[0]);
@@ -33,7 +34,7 @@ int main(int argc, char **argv)
     }  
 
     in = (double*) fftw_malloc(sizeof(double) * N);
-    out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * N/2+1);
+    out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * ((N/2)+1));
     p = fftw_plan_dft_r2c_1d(N, in, out, FFTW_ESTIMATE);
 
     while(1) {
@@ -46,16 +47,23 @@ int main(int argc, char **argv)
             exit(1);
         }
 
+        // add to processed sample count
+        processed_size += sz/sizeof(buf[0])/2;
+
         // copy only 1 channel of audio into FFT in buffer
-        for(i=0 ;i<N; ++i) {
+        for(i=0 ;i<(sz/sizeof(buf[0])/2); i++) {
             in[i] = buf[i*2];
+        }
+        // fill the remaing with zero, which happens just before end of file
+        for(;i<N; ++i) {
+            in[i] = 0;
         }
 
         fftw_execute(p);
     }
 
-    printf("result: ");
-    for(i=0; i<N/2+1; ++i) {
+    printf("result of %ld samples: ", processed_size);
+    for(i=0; i<(N/2+1); ++i) {
         if(i%8 == 0) { // pretty print
             printf("\n%4d: ", i/8);
         }
@@ -63,8 +71,10 @@ int main(int argc, char **argv)
     }
     printf("\n");
 
+    fftw_free(in); 
+    fftw_free(out);
     fftw_destroy_plan(p);
-    fftw_free(in); fftw_free(out);
+    close(fd);
 
     return 0;
 }

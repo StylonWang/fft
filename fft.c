@@ -62,14 +62,22 @@ int main(int argc, char **argv)
         fftw_execute(p);
     }
 
-    fprintf(stdout, "result of %ld samples: ", processed_size);
+    fprintf(stderr, "result of %ld samples: ", processed_size);
+#if 0
     for(i=0; i<(N/2+1); ++i) {
         if(i%8 == 0) { // pretty print
             fprintf(stdout, "\n%4d: ", i/8);
         }
         fprintf(stdout, "%6.3f ", cabs(out[i]));
     }
+#else
+    // CSV
     fprintf(stdout, "\n");
+    for(i=0; i<(N/2+1); ++i) {
+        fprintf(stdout, "%6.3f,", cabs(out[i]));
+    }
+#endif
+    fprintf(stderr, "\n");
 
     fftw_free(in); 
     fftw_free(out);

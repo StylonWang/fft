@@ -6,6 +6,9 @@ LDFLAGS=-lfftw3 -lm
 
 default:: fft
 
+clean::
+	rm -f fft
+
 fft:: fft.c
 	$(CC) $(CFLAGS) $^ $(LDFLAGS) -o $@
 

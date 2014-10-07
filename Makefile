@@ -1,8 +1,8 @@
 
 CROSS_COMPILE=
 CC=$(CROSS_COMPILE)gcc
-CFLAGS=-Wall
-LDFLAGS=-lfftw3 -lm
+CFLAGS=-Wall -g
+LDFLAGS=-lfftw3 -lm -lasound -lpthread
 
 default:: fft fft-alsa
 
@@ -12,6 +12,6 @@ clean::
 fft:: fft.c
 	$(CC) $(CFLAGS) $^ $(LDFLAGS) -o $@
 
-fft-alsa:: fft-alsa.c
+fft-alsa:: fft-alsa.c 
 	$(CC) $(CFLAGS) $^ $(LDFLAGS) -o $@
 

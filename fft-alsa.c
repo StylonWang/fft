@@ -22,14 +22,14 @@ int main(int argc, char **argv)
     long processed_size=0;
 
     if(argc<2) {
-        printf("usage: %s raw-audio-file\n\n", argv[0]);
-        printf("audio format in file must be 16-bit signed little endian, 2 channel PCM audio\n");
+        fprintf(stderr, "usage: %s raw-audio-file\n\n", argv[0]);
+        fprintf(stderr, "audio format in file must be 16-bit signed little endian, 2 channel PCM audio\n");
         exit(1);
     }
 
     fd = open(argv[1], O_RDONLY);
     if(fd<0) {
-        printf("open failed: %s\n", strerror(errno));
+        fprintf(stderr, "open failed: %s\n", strerror(errno));
         exit(1);
     }  
 
@@ -43,7 +43,7 @@ int main(int argc, char **argv)
         sz = read(fd, buf, sizeof(buf));
         if(0==sz) break;
         else if(sz<0) {
-            printf("read failed: %s\n", strerror(errno));
+            fprintf(stderr, "read failed: %s\n", strerror(errno));
             exit(1);
         }
 
@@ -62,14 +62,14 @@ int main(int argc, char **argv)
         fftw_execute(p);
     }
 
-    printf("result of %ld samples: ", processed_size);
+    fprintf(stdout, "result of %ld samples: ", processed_size);
     for(i=0; i<(N/2+1); ++i) {
         if(i%8 == 0) { // pretty print
-            printf("\n%4d: ", i/8);
+            fprintf(stdout, "\n%4d: ", i/8);
         }
-        printf("%6.3f ", cabs(out[i]));
+        fprintf(stdout, "%6.3f ", cabs(out[i]));
     }
-    printf("\n");
+    fprintf(stdout, "\n");
 
     fftw_free(in); 
     fftw_free(out);

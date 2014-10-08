@@ -12,6 +12,6 @@ clean::
 fft:: fft.c
 	$(CC) $(CFLAGS) $^ $(LDFLAGS) -o $@
 
-fft-alsa:: fft-alsa.c 
-	$(CC) $(CFLAGS) $^ $(LDFLAGS) -o $@
+fft-alsa:: fft-alsa.c lcdband.c
+	$(CC) $(CFLAGS) $^ $(LDFLAGS) -lwiringPi -o $@
 

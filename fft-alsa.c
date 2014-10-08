@@ -13,6 +13,8 @@
 #include <pthread.h>
 #include <math.h>
 
+#include "lcdband.h"
+
 #define N (128)
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER; 
@@ -20,42 +22,68 @@ double mag[N/2-1];
 int db[N/2-1];
 long processed_size=0;
 
+// determine how to display FFT results
+//#define SHOW_MAG
+//#define SHOW_DB
+#define SHOW_LCD
+
 void *pthread_routine(void *data)
 {
+    lcdband_t *t;
+    
     fprintf(stderr, "thread started\n");
+
+    t = lcdband_init("/dev/spidev0.0");
+    if(!t) return 0;
+
     while(1) {
         int i;
         struct timeval timeout;
 
         //timeout.tv_sec = 0;
         //timeout.tv_usec = 50*1000; // 50 mili seconds 
-        timeout.tv_sec = 1;
-        timeout.tv_usec = 0; // 1 second
+        timeout.tv_sec = 0;
+        timeout.tv_usec = 100*1000; // 1 second
         select(0, NULL, NULL, NULL, &timeout);
 
         //TODO: draw spectrum based on out2
         pthread_mutex_lock(&mutex);
 
-#if 1
+#if defined(SHOW_MAG)
         fprintf(stderr, "Magnitude %ld:\n", processed_size);
-        for(i=0; i<N/2+1; ++i) {
+        for(i=1; i<N/2+1; ++i) {
             if(i%8==0) fprintf(stderr, "\n");
             fprintf(stderr, "%6.3f, ", mag[i]);
         }
         fprintf(stderr, "\n");
-#else
+#endif
+
+#if defined(SHOW_DB)
         fprintf(stderr, "dB %ld:\n", processed_size);
-        for(i=0; i<N/2+1; ++i) {
+        for(i=1; i<N/2+1; ++i) {
             if(i%8==0) fprintf(stderr, "\n");
             fprintf(stderr, "%3d, ", db[i]);
         }
         fprintf(stderr, "\n");
 #endif
+
+#if defined(SHOW_LCD)
+        for(i=1; i<N/2+1; ++i) {
+            //lcdband_set(t, i, mag[i]*6/200000);
+            lcdband_set(t, i, mag[i]/1000);
+        }
+
+        lcdband_display(t);
+#endif
+
         pthread_mutex_unlock(&mutex);
 
     }
 
     fprintf(stderr, "thread ended\n");
+
+    lcdband_finish(t);
+
     return 0;
 }
 

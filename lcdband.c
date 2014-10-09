@@ -95,14 +95,18 @@ lcdband_t *lcdband_init(const char *spi_dev)
     return t;
 }
 
-int lcdband_set(lcdband_t *t, int band, int value)
+int lcdband_set(lcdband_t *t, int channel, int band, int value)
 {
-    if(band>sizeof(t->band)/sizeof(t->band[0]) || band<0) {
+    if(band>sizeof(t->band[0])/sizeof(t->band[0][0]) || band<0) {
         fprintf(stderr, "%s band %d exceeds limits\n", __func__, band);
         return -1;
     }
+    if(channel>=sizeof(t->band)/sizeof(t->band[0])) {
+        fprintf(stderr, "%s ch %d error\n", __func__, channel);
+        return -1;
+    }
 
-    t->band[band] = value;
+    t->band[channel][band] = value;
     return 0;
 }
 
@@ -141,14 +145,31 @@ int lcdband_display(lcdband_t *t)
 
     memset(t->display_buf, 0, sizeof(t->display_buf));
     // transform band info to display_buf
-    for(b=0; b<sizeof(t->band)/sizeof(t->band[0]); ++b) {
-        int v = t->band[b]/2;
+    
+    // channel 0
+    for(b=0; b<sizeof(t->band[0])/sizeof(t->band[0][0]); ++b) {
+        int v = t->band[0][b]/2;
         if(v>32) v=32;
         if(v<0) v=0;
 
         for(y=32-v; y<32; y++) { // fill vertical pixels
             int i;
-            int expand = 128/(sizeof(t->band)/sizeof(t->band[0]));
+            int expand = 128/(sizeof(t->band[0])/sizeof(t->band[0][0]));
+            for(i=0; i<expand; ++i) { // fill horizontal pixels
+                t->display_buf[y][b*expand+i] = 1;
+            }
+        }
+    }
+
+    // channel 1
+    for(b=0; b<sizeof(t->band[1])/sizeof(t->band[1][0]); ++b) {
+        int v = t->band[1][b]/2;
+        if(v>32) v=32;
+        if(v<0) v=0;
+
+        for(y=64-v; y<64; y++) { // fill vertical pixels
+            int i;
+            int expand = 128/(sizeof(t->band[1])/sizeof(t->band[1][0]));
             for(i=0; i<expand; ++i) { // fill horizontal pixels
                 t->display_buf[y][b*expand+i] = 1;
             }
@@ -159,11 +180,11 @@ int lcdband_display(lcdband_t *t)
     t->output_buf[1] = 0; // X-coordinate: 0
     t->output_buf[2] = 0; // Y-coordinate: 0
     t->output_buf[3] = 128; // 128 pixels in width
-    t->output_buf[4] = 32; // 32 pixels in height
+    t->output_buf[4] = 64; // 64 pixels in height
 
     memset(t->output_buf+5, 0 ,sizeof(t->output_buf)-5);
     // transform display_buf to output_buf in bitmap
-    for(y=0; y<32; ++y) {
+    for(y=0; y<64; ++y) {
         for(x=0; x<(128/8); ++x) {
             unsigned char *p = &t->display_buf[y][x*8];
 

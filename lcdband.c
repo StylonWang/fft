@@ -27,7 +27,7 @@ lcdband_t *lcdband_init(const char *spi_dev)
     uint32_t speed = 500000;
 
     char clr[] = {0x80};
-    char backlight[] = {0x8A, 30};
+    char backlight[] = {0x8A, 60};
 
     // init wiringPi
     ret = wiringPiSetup();
@@ -146,9 +146,12 @@ int lcdband_display(lcdband_t *t)
         if(v>32) v=32;
         if(v<0) v=0;
 
-        for(y=32-v; y<32; y++) {
-            t->display_buf[y][b*2] = 1;
-            t->display_buf[y][b*2+1] = 1;
+        for(y=32-v; y<32; y++) { // fill vertical pixels
+            int i;
+            int expand = 128/(sizeof(t->band)/sizeof(t->band[0]));
+            for(i=0; i<expand; ++i) { // fill horizontal pixels
+                t->display_buf[y][b*expand+i] = 1;
+            }
         }
     }
 

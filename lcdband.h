@@ -4,7 +4,7 @@
 typedef struct lcdband_t 
 {
     int fd; // fd to spi lcd device
-    unsigned char band[64];
+    unsigned char band[32];
 
     unsigned char output_buf[5 + 128*(32/8)]; // cmd: 1byte, x-y-w-h: 4 bytes
     unsigned char display_buf[32][128];

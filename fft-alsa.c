@@ -1,3 +1,6 @@
+/*
+ * Example: arecord -D plughw:1,0 --buffer-size=4410 --start-delay=2205 -r 48000 -c 2 -f S16_LE | ./fft-alsa | aplay
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
@@ -68,9 +71,10 @@ void *pthread_routine(void *data)
 #endif
 
 #if defined(SHOW_LCD)
-        for(i=1; i<N/2+1; ++i) {
-            //lcdband_set(t, i, mag[i]*6/200000);
-            lcdband_set(t, i, mag[i]/1000);
+        for(i=1; i<(N/2+1); i+=2) { // show 64 bands in 32 bands
+            int v;
+            v = (mag[i]+mag[i+1])/2/1000;
+            lcdband_set(t, i/2, v);
         }
 
         lcdband_display(t);
